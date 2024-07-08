@@ -1,3 +1,16 @@
 .light {
     font-weight: normal !important;
+    cursor: initial;
+}
+.ui-cronmaker {
+    width: 50em;
+    padding: .5em .5em 0;
+}
+.ui-cronmaker-corner-all {
+    border-radius: 5px;
+}
+.ui-cronmaker-content {
+    border: 1px solid #dddddd;
+    background: #f9f9f9;
+    color: #362b36;
 }
