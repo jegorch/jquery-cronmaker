@@ -11,7 +11,6 @@
 (function ($) {
 
     var PROP_NAME = 'cronmaker';
-    var instActive;
 
     /*
     * Cronmaker manager.
@@ -47,6 +46,8 @@
         };
         this._defaults = { // Global defaults for all instances
             lang: 'en',
+            targetInputId: 'cron',
+            onGen: function () { },
         }
         $.extend(this._defaults, this.regional['']);
         this.dpDiv = $('<div id="' + this._mainDivId + '" class="ui-cronmaker ui-cronmaker-content ui-cronmaker-corner-all"></div>');
@@ -126,8 +127,18 @@
 
         /* Generate the Cronmaker content. */
         _updateCronmaker: function (inst) {
-            instActive = inst; // for delegate hover events
             inst.dpDiv.empty().append(this._generateHTML(inst));
+
+            var buttonText = this._get(inst, 'generateCronExpressionText');
+            var b = $('<button type="button" class="btn" id="' + inst.id + '_btnGenCron"><i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;' + buttonText + '</button>')
+                .on('click', function () {
+                    $.cronmaker._calc(inst.id, inst.settings.targetInputId);
+                    // Call callback function if exists.
+                    if (inst.settings.onGen && typeof inst.settings.onGen === 'function') {
+                        inst.settings.onGen({ id: inst.id, targetInputId: inst.settings.targetInputId });
+                    }
+                });
+            $('#' + inst.id + '_buttonDiv').append(b)
             this._reset(inst.settings.lang);
         },
 
@@ -164,15 +175,8 @@
                 + "</div>"
                 + "<hr/>"
 
-                + "<div style='margin-top: 10px;'>"
-                + ' <button type="button" class="btn" id="btnGenCron" onclick="$.cronmaker._calc(\'' + id.trim() + '\')"><i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;' + buttonText + '</button>'
+                + "<div id='" + id + "_buttonDiv' style='margin-top: 10px;'>"
                 + " <label id='" + id + "_lblValidation' style='color: red; display: inline-block; float:right;'></label>"
-                + " <div style='margin-top: 10px;'>"
-                + "     <div class='input-prepend'>"
-                + "         <span class='add-on'>CRON</span>"
-                + "         <input type='text' name='CRON' id='CRON' value='' class='input-xlarge' />"
-                + "     </div>"
-                + " </div>"
                 + "</div>"
                 ;
         },
@@ -200,7 +204,7 @@
 
             return "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='hour' value='frequence' checked />" + everyText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_hour' value='frequence' checked />" + everyText + '&nbsp;'
                 + "     </label>"
                 + "     <div class='input-append'>"
                 + this._createHourDropDownList(inst, id + '_txtEveryHours')
@@ -210,7 +214,7 @@
                 + "<br />"
                 + " <div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='hour' value='time' checked />" + atText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_hour' value='time' checked />" + atText + '&nbsp;'
                 + "     </label>"
                 + "     <input type='text' id='" + id + "_txtHourlyAtTime' class='input-small timepicker' />"
                 + "</div>"
@@ -226,7 +230,7 @@
 
             return "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='daily' value='frequence' checked/>" + everyText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_daily' value='frequence' checked/>" + everyText + '&nbsp;'
                 + "     </label>"
                 + "     <div class='input-append'>"
                 + "         <input type='number' id='" + id + "_txtEveryDays' class='input-mini' min='1' max='31' placeholder='1..31'/>"
@@ -236,7 +240,7 @@
                 + "<br />"
                 + " <div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='daily' value='time' />" + everyWeekDayText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_daily' value='time' />" + everyWeekDayText + '&nbsp;'
                 + "     </label>"
                 + " </div>"
                 + "<br />"
@@ -251,13 +255,13 @@
             var id = inst.id;
             var startTimeText = this._get(inst, 'startTimeText');
 
-            return "<label class='checkbox'><input type='checkbox' name='weekly' value='MON' />Monday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='TUE' />Tuesday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='WED' />Wednesday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='THU' />Thursday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='FRI' />Friday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='SAT' />Saturday</label>"
-                + "<label class='checkbox'><input type='checkbox' name='weekly' value='SUN' />Sunday</label>"
+            return "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='MON' />Monday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='TUE' />Tuesday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='WED' />Wednesday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='THU' />Thursday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='FRI' />Friday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='SAT' />Saturday</label>"
+                + "<label class='checkbox'><input type='checkbox' name='" + id + "_weekly' value='SUN' />Sunday</label>"
                 + " <div class='input-prepend'>"
                 + "     <span class='add-on'>" + startTimeText + "</span>"
                 + "     <input type='text' id='" + id + "_txtWeeklyAtTime'class='input-small timepicker' />"
@@ -275,7 +279,7 @@
 
             return "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='monthly' value='day' checked/>" + dayText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_monthly' value='day' checked/>" + dayText + '&nbsp;'
                 + "     </label>"
                 + "     <input type='number' id='" + id + "_txtMonthlyDay' class='input-mini' min='1' max='31' placeholder='1..31'/>"
                 + "     <label class='light'> " + ofEveryText + " </label>"
@@ -287,7 +291,7 @@
                 + "<br />"
                 + "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='monthly' value='weekday'/>" + theText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_monthly' value='weekday'/>" + theText + '&nbsp;'
                 + "     </label>"
                 + this._createNthDropDownList(inst, id + '_ddlMonthlyNth')
                 + this._createWeekDropDownList(inst, id + '_ddlMonthlyWeekDay')
@@ -314,7 +318,7 @@
 
             return "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='yearly' value='everyDate' />" + everyText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_yearly' value='everyDate' />" + everyText + '&nbsp;'
                 + "     </label>"
                 + this._createMonthDropDownList(inst, id + '_ddlYearlyMonth')
                 + "     <input type='number' id='" + id + "_txtYearlyDay' class='input-mini' min='1' max='31' placeholder='1..31' />"
@@ -322,7 +326,7 @@
                 + "<br />"
                 + "<div class='form-inline'>"
                 + "     <label class='radio'>"
-                + "         <input type='radio' name='yearly' value='weekday' checked />" + theText + '&nbsp;'
+                + "         <input type='radio' name='" + id + "_yearly' value='weekday' checked />" + theText + '&nbsp;'
                 + "     </label>"
                 + this._createNthDropDownList(inst, id + '_ddlYearlyNth')
                 + "&nbsp;"
@@ -426,17 +430,18 @@
         },
 
         _reset: function (lang) {
-            $("#CRON").attr('value', '');
             $(".timepicker").timepicker($.timepicker.regional[lang]);
             $(".timepicker").timepicker('setTime', new Date());
         },
 
-        _printResult: function (secs, mins, hours, dayOfMonth, month, dayOfWeek, year) {
+        _printResult: function (targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year) {
             var generatedCron = [secs, mins, hours, dayOfMonth, month, dayOfWeek, year];
-            $("#CRON").attr('value', generatedCron.join(' '));
+
+            var targetInput = $("#" + targetInputId);
+            targetInput.attr('value', generatedCron.join(' '));
         },
 
-        _calc: function (id) {
+        _calc: function (id, targetInputId) {
             var tabId = id + '_Tabs';
             var currTab = this._getCurrentTab(tabId);
             var rdoType;
@@ -459,10 +464,10 @@
                     $("#" + id + "_lblValidation").html("Minimum minutes should be 1.");
                 } else {
                     $("#" + id + "_lblValidation").html('');
-                    this._printResult(secs, '0/' + mins, hours, dayOfMonth, month, dayOfWeek, year);
+                    this._printResult(targetInputId, secs, '0/' + mins, hours, dayOfMonth, month, dayOfWeek, year);
                 }
             } else if (currTab == "Hourly") {
-                rdoType = $("input[name='hour']:checked").val();
+                rdoType = $("input[name='" + id + "_hour']:checked").val();
 
                 if (rdoType == "frequence") {
                     secs = 0;
@@ -477,7 +482,7 @@
                         $("#" + id + "_lblValidation").html("Minimum hours should be 1.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 } else { //chose time
                     time = $("#" + id + "_txtHourlyAtTime").val().split(":");
@@ -489,10 +494,10 @@
                     dayOfWeek = "?";
                     year = "*";
                     $("#" + id + "_lblValidation").html("");
-                    this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                    this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                 }
             } else if (currTab == "Daily") {
-                rdoType = $("input[name='daily']:checked").val();
+                rdoType = $("input[name='" + id + "_daily']:checked").val();
 
                 if (rdoType == "frequence") {
                     time = $("#" + id + "_txtDailyAtTime").val().split(":");
@@ -509,7 +514,7 @@
                         $("#" + id + "_lblValidation").html("Minimum days should be 1.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 } else { //chose weekday
                     time = $("#" + id + "_txtDailyAtTime").val().split(":");
@@ -525,15 +530,15 @@
                         $("#" + id + "_lblValidation").html("Minimum days should be 1.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 }
             } else if (currTab == "Weekly") {
-                $("input[name='weekly']:checked").each(function () {
+                $("input[name='" + id + "_weekly']:checked").each(function () {
                     chbType.push($(this).val());
                 });
 
-                time = $("#" + id + "_txtDailyAtTime").val().split(":");
+                time = $("#" + id + "_txtWeeklyAtTime").val().split(":");
                 secs = 0;
                 mins = Number(time[1]);
                 hours = Number(time[0]);
@@ -546,10 +551,10 @@
                     $("#" + id + "_lblValidation").html("Field 'Days selection' is required.");
                 } else {
                     $("#" + id + "_lblValidation").html("");
-                    this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                    this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                 }
             } else if (currTab == "Monthly") {
-                rdoType = $("input[name='monthly']:checked").val();
+                rdoType = $("input[name='" + id + "_monthly']:checked").val();
 
                 if (rdoType == "day") {
                     txtday = $("#" + id + "_txtMonthlyDay").val();
@@ -568,7 +573,7 @@
                         $("#" + id + "_lblValidation").html("Field 'Day' and 'every month(s)' are required.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 } else {
                     nth = $("#" + id + "_ddlMonthlyNth").val();
@@ -588,11 +593,11 @@
                         $("#" + id + "_lblValidation").html("Field 'every month(s)' is required.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 }
             } else if (currTab == "Yearly") {
-                rdoType = $("input[name='yearly']:checked").val();
+                rdoType = $("input[name='" + id + "_yearly']:checked").val();
 
                 if (rdoType == "everyDate") {
                     txtday = $("#" + id + "_txtYearlyDay").val();
@@ -611,7 +616,7 @@
                         $("#" + id + "_lblValidation").html("Field 'Day' is required.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 } else {
                     nth = $("#" + id + "_ddlYearlyNth").val();
@@ -631,7 +636,7 @@
                         $("#" + id + "_lblValidation").html("Field 'every month(s)' is required.");
                     } else {
                         $("#" + id + "_lblValidation").html("");
-                        this._printResult(secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
+                        this._printResult(targetInputId, secs, mins, hours, dayOfMonth, month, dayOfWeek, year);
                     }
                 }
             }
@@ -666,7 +671,7 @@
         }
 
         var otherArgs = Array.prototype.slice.call(arguments, 1);
-        return this.each(function () {
+        return this.each(function (index, el) {
             typeof options == 'string' ?
                 $.cronmaker['_' + options + 'Cronmaker'].
                     apply($.cronmaker, [this].concat(otherArgs)) :
@@ -677,6 +682,8 @@
     // Plugin defaults - added as a property on our plugin function.
     $.fn.cronmaker.defaults = {
         lang: 'en',
+        targetInputId: 'cron',
+        onGen: function () { },
     };
 
     /* jQuery extend now ignores nulls! */
